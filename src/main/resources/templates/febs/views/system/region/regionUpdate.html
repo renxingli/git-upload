@@ -1,0 +1,73 @@
+<style>
+    #region-update {
+        padding: 20px 25px 25px 0;
+    }
+</style>
+<div class="layui-fluid" id="region-update">
+    <form class="layui-form" action="" lay-filter="region-update-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" data-th-value="${region.id}">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">名称：</label>
+            <div class="layui-input-block">
+                <input type="text" name="mername" minlength="1" maxlength="100" data-th-value="${region.mername}"
+                       autocomplete="off" class="layui-input" readonly>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">状态：</label>
+            <div class="layui-input-block">
+                <input type="radio" name="stateId" value="2" title="关闭">
+                <input type="radio" name="stateId" value="1" title="激活">
+                <input type="radio" name="stateId" value="0" title="未激活">
+            </div>
+        </div>
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="region-update-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'xmSelect', 'validate'], function () {
+        let $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            form = layui.form,
+            xmSelect = layui.xmSelect,
+            region = [[${region}]],
+            validate = layui.validate,
+            dataPermissionXmlSelect,
+            roleXmSelect,
+            deptXmlSelect;
+
+        form.verify(validate);
+        form.render();
+
+        initUserValue();
+
+
+        function initUserValue() {
+            form.val("region-update-form", {
+                "stateId": region.stateId,
+            });
+        }
+
+        form.on('submit(region-update-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, region)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }
+            febs.post(ctx + 'region/update', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('修改成功');
+                $('#febs-region').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

@@ -1,0 +1,182 @@
+<style>
+    #febs-region xm-select {
+        min-height: 30px;
+        line-height: 30px;
+    }
+
+    #febs-region xm-select > .xm-label .scroll .label-content {
+        display: flex;
+        padding: 0 30px 0 10px;
+    }
+</style>
+<div class="layui-fluid layui-anim febs-anim" id="febs-region" lay-title="用户管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="user-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">名称</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="mername" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">状态</label>
+                                        <div class="layui-input-inline">
+                                            <select name="stateId">
+                                                <option value="1">激活</option>
+                                                <option value="2">关闭</option>
+                                                <option value="">全部</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary febs-button-blue-plain table-action"
+                                     id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary febs-button-green-plain table-action"
+                                     id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <!--<div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                >
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>-->
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="regionTable" lay-data="{id: 'regionTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="region-option">
+    <a lay-event="edit"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+</script>
+<script type="text/html" id="region-status">
+    {{#
+    let stateId = {
+    0: {title: '未激活', color: 'red'},
+    1: {title: '激活', color: 'green'},
+    2: {title: '关闭', color: 'volcano'}
+    }[d.stateId];
+    }}
+    <span class="layui-badge febs-bg-{{stateId.color}}">{{ stateId.title }}</span>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'xmSelect'], function () {
+        let $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            dropdown = layui.dropdown,
+            $view = $('#febs-region'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            sortObject = {field: 'id', type: null},
+            tableIns,
+            createTimeFrom,
+            createTimeTo,
+            deptXmlSelect;
+
+        form.render();
+
+        initTable();
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                let checkStatus = table.checkStatus('regionTable');
+                if (name === 'add') {
+                    febs.modal.open('新增用户', 'system/user/add', {
+                        btn: ['提交', '取消'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#region-update').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#region-update').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+            },
+            options: [{
+                name: 'add',
+                title: '新增用户',
+                perms: 'user:add'
+            }]
+        });
+
+
+        table.on('tool(regionTable)', function (obj) {
+            let data = obj.data,
+                layEvent = obj.event;
+            if (layEvent === 'edit') {
+                febs.modal.open('城市管理', 'system/region/update/' + data.id, {
+                    btn: ['提交'],
+                    area: $(window).width() <= 750 ? '95%' : '50%',
+                    yes: function (index, layero) {
+                        $('#region-update').find('#submit').trigger('click');
+                    },
+                    /*btn2: function () {
+                        $('#user-add').find('#reset').trigger('click');
+                        return false;
+                    }*/
+                });
+            }
+        });
+
+        table.on('sort(regionTable)', function (obj) {
+            sortObject = obj;
+            tableIns.reload({
+                initSort: obj,
+                where: $.extend(getQueryParams(), {
+                    field: obj.field,
+                    order: obj.type
+                })
+            });
+        });
+
+        $query.on('click', function () {
+            let params = $.extend(getQueryParams(), {field: sortObject.field, order: sortObject.type});
+            tableIns.reload({where: params, page: {curr: 1}});
+        });
+
+        $reset.on('click', function () {
+            $searchForm[0].reset();
+            tableIns.reload({where: null, page: {curr: 1}, initSort: sortObject});
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'regionTable',
+                url: ctx + 'region/list',
+                cols: [[
+                    {field: 'id', title: 'ID', minWidth: 100},
+                    {field: 'mername', title: '名称', minWidth: 100},
+                    {title: '状态', templet: '#region-status'},
+                    {title: '操作', toolbar: '#region-option', width: 60}
+                ]]
+            });
+        }
+
+        function getQueryParams(flag) {
+            let params = $searchForm.serializeJson();
+            return params;
+        }
+
+    })
+</script>

@@ -1,0 +1,74 @@
+
+
+<div class="layui-fluid" id="type">
+        <table lay-filter="typeTable" lay-data="{id: 'typeTable'}"></table>
+    <div class="layui-btn layui-btn-sm layui-btn-primary febs-button-green-plain table-action" id="reset"
+         style="display: none">
+        <i class="layui-icon">&#xe79b;</i>
+    </div>
+    <button class="layui-btn" id="type-add">添加类别</button>
+    <br><br><br>
+</div>
+
+
+
+<script type="text/html" id="type-option">
+    <a lay-event="del"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'xmSelect'], function () {
+        let $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            dropdown = layui.dropdown,
+            $view = $('#type'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $typeadd = $view.find('#type-add'),
+            $searchForm = $view.find('form'),
+            sortObject = {field: 'createTime', type: null},
+            tableIns;
+
+        $typeadd.on('click', function () {
+            febs.modal.view('新增类别', 'system/shop/typeAdd', {
+                area: $(window).width() <= 750 ? '95%' : '660px',
+            });
+        });
+
+        initTable();
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'typeTable',
+                url: ctx + 'shop/type/list',
+                cols: [[
+                    {field: 'typeId', title: '类别id', minWidth: 100},
+                    // {field: ctx + "febs/images/avatar/" + currentUser.avatar + 'commodityImage', title: '图片'},
+                    {field: 'typeName', title: '类别名称', minWidth: 80},
+                    {title: '操作', toolbar: '#type-option', minWidth: 50}
+                ]]
+            });
+        }
+        table.on('tool(typeTable)', function (obj) {
+            console.log(obj)
+            let data = obj.data,
+                layEvent = obj.event;
+            if (layEvent === 'del') {
+                febs.modal.confirm('删除规格', '确定删除该规格？', function () {
+                    console.log(data.typeId)
+                    deleteType(data.typeId);
+                });
+            }
+        });
+        function deleteType(typeId) {
+            febs.get(ctx + 'shopType/type/del?typeId=' + typeId, null, function (data) {
+                console.log(data)
+                febs.alert.success('删除成功');
+                parent.layui.table.reload('typeTable');
+            });
+        }
+    })
+</script>
+

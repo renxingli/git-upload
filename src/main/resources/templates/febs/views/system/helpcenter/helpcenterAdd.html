@@ -1,0 +1,52 @@
+<div class="layui-fluid" id="help-add">
+    <form class="layui-form" action="" lay-filter="user-add-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">新增标题：</label>
+            <div class="layui-input-block">
+                <input type="text" name="helpcenterTitle" placeholder="请输入添加的标题" required lay-verify="required" minlength="2"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">板块内容：</label>
+            <div class="layui-input-block">
+                <textarea rows="20" name="heplcenterContent" lay-verify="required" placeholder="请输入内容"  required class="layui-textarea text"></textarea>
+            </div>
+        </div>
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="*">添加</button>
+            <button type="reset" class="layui-btn layui-btn-primary" lay-filter="reset">重置</button>
+        </div>
+    </form>
+</div>
+<script>
+    layui.use(['febs', 'form', 'validate', 'xmSelect'], function () {
+        let $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            form = layui.form,
+            $view = $('#help-add'),
+            $searchForm = $view.find('form'),
+            $reset = $view.find('#reset'),
+            $addtype = $view.find('#add-type'),
+            xmSelect = layui.xmSelect,
+            validate = layui.validate,
+            tableIns,
+            deptXmlSelect;
+
+        //清除表单内容
+        $reset.on('click', function () {
+            $searchForm[0].reset();
+        });
+
+        form.on('submit(*)', function (data) {
+            febs.post(ctx + 'helpcenter', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('新增新闻成功');
+                parent.layui.table.reload('newsTable');
+                // window.parent.location.reload();
+            });
+            return false;
+        });
+    });
+</script>

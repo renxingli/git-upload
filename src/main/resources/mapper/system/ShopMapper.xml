@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cc.mrbird.febs.shop.mapper.ShopMapper">
+
+    <sql id="countShopDetailSql" >
+        SELECT
+        COUNT(1)
+        FROM
+        t_shop u
+        WHERE 1 = 1
+        <if test="shop.commodityName != null and shop.commodityName != ''">
+            AND u.commodity_Name = #{shop.commodityName}
+        </if>
+        <if test="shop.commodityNumber != null and shop.commodityNumber != ''">
+            AND u.COMMODITY_NUMBER = #{shop.commodityNumber}
+        </if>
+        <if test="shop.commoditySpecifications != null and shop.commoditySpecifications != ''">
+            AND u.commodity_Specifications = #{shop.commoditySpecifications}
+        </if>
+        <if test="shop.commodityCostPrice != null and shop.commodityCostPrice != ''">
+            AND u.commodity_Cost_Price = #{shop.commodityCostPrice}
+        </if>
+        <if test="shop.commoditySellingPrice != null and shop.commoditySellingPrice != ''">
+            AND u.commodity_Selling_Price = #{shop.commoditySellingPrice}
+        </if>
+        <if test="shop.typeId != null and shop.typeId != ''">
+            AND u.TYPE_ID = #{shop.typeId}
+        </if>
+        <if test="shop.createTimeFrom != null and shop.createTimeFrom !=''">
+            And u.create_time &gt; #{shop.createTimeFrom}
+        </if>
+        <if test="shop.createTimeTo!= null and shop.createTimeTo !=''">
+            And u.create_time &lt; #{shop.createTimeTo}
+        </if>
+    </sql>
+
+    <sql id="findShopDetailSql">
+        SELECT
+        u.COMMODITY_ID,
+        u.COMMODITY_NUMBER commodityNumber,
+        u. COMMODITY_NAME commodityName,
+        u.COMMODITY_IMAGE commodityImage,
+        u.COMMODITY_COST_PRICE commodityCostPrice,
+        u.COMMODITY_SELLING_PRICE commoditySellingPrice,
+        u.CREATE_TIME createTime,
+        u.MODIFY_TIME modifyTime,
+        t.TYPE_NAME shopType,
+        ts.SPECIFICATIONS_NAME specificationsName
+        FROM
+        t_shop u
+        left join t_type t on (t.TYPE_ID = u.TYPE_ID)
+        left join t_specifications ts on (ts.COMMODITY_ID = u.COMMODITY_ID)
+        WHERE 1 = 1
+        <if test="shop.commodityId != null and shop.commodityId != ''">
+            AND u.COMMODITY_ID = #{shop.commodityId}
+        </if>
+        <if test="shop.commodityNumber != null and shop.commodityNumber != ''">
+            AND u.COMMODITY_NUMBER = #{shop.commodityNumber}
+        </if>
+        <if test="shop.commodityName != null and shop.commodityName != ''">
+            AND u.COMMODITY_NAME = #{shop.commodityName}
+        </if>
+        <if test="shop.commodityCostPrice != null and shop.commodityCostPrice != ''">
+            AND u.COMMODITY_COST_PRICE = #{shop.commodityCostPrice}
+        </if>
+        <if test="shop.commoditySellingPrice != null and shop.commoditySellingPrice != ''">
+            AND u.COMMODITY_SELLING_PRICE = #{shop.commoditySellingPrice}
+        </if>
+        <if test="shop.typeId != null and shop.typeId != ''">
+            AND u.TYPE_ID = #{shop.typeId}
+        </if>
+        <if test="shop.createTime != null and shop.createTime !=''">
+            And u.CREATE_TIME = #{shop.createTime}
+        </if>
+        <if test="shop.modifyTime!= null and shop.modifyTime !=''">
+            And u.MODIFY_TIME = #{shop.modifyTime}
+        </if>
+        <if test="shop.createTimeFrom != null and shop.createTimeFrom !=''">
+            And u.CREATE_TIME &gt; #{shop.createTimeFrom}
+        </if>
+        <if test="shop.createTimeTo!= null and shop.createTimeTo !=''">
+            And u.CREATE_TIME &lt; #{shop.createTimeTo}
+        </if>
+        <if test="shop.specificationsId != null and shop.specificationsId != ''">
+            And ts.SPECIFICATIONS_ID = #{shop.specificationsId}
+        </if>
+        GROUP BY
+        u.COMMODITY_ID,
+        u. COMMODITY_NAME,
+        u.COMMODITY_IMAGE,
+        u.COMMODITY_COST_PRICE,
+        u.COMMODITY_SELLING_PRICE,
+        u.TYPE_ID
+
+    </sql>
+
+
+    <select id="countShopDetail" parameterType="shop" resultType="long">
+        <include refid="countShopDetailSql"/>
+    </select>
+
+    <select id="findShopDetailPage" parameterType="shop" resultType="shop">
+        <include refid="findShopDetailSql" />
+    </select>
+</mapper>

@@ -1,0 +1,467 @@
+https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
+######导包
+        <dependency>
+            <groupId>com.github.wxpay</groupId>
+            <artifactId>wxpay-sdk</artifactId>
+            <version>0.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.4</version>
+        </dependency>
+
+######工具类
+/**
+ * 微信小程序配置类
+ */
+@Configuration//配置类
+public class WeChatConfig implements WXPayConfig {
+
+    private byte[] certData;
+
+
+    //@Value("${appId.value}")
+    private String appIdValue = "wx92ccfd81dcf1434f";
+    //@Value("${mchId.value}")
+    private String mchIdValue = "1595542641";
+    //@Value("${key.value}")
+    private String keyValue = "202cb962ac59075b964b07152d234b70";
+
+    public String getAppID() {
+        return appIdValue;
+    }
+
+    public String getMchID() {
+        return mchIdValue;
+    }
+
+    public String getKey() {
+        return keyValue;
+    }
+
+    public InputStream getCertStream() {
+        ByteArrayInputStream certBis = new ByteArrayInputStream(this.certData);
+        return certBis;
+    }
+
+    public int getHttpConnectTimeoutMs() {
+        return 8000;
+    }
+
+    public int getHttpReadTimeoutMs() {
+        return 10000;
+    }
+
+}
+/**
+ *	前端传参
+ *
+ */
+public class WeChatIV {
+
+	//是否授权
+    private String encryptedData;
+	//
+    private String iv;
+	//code码
+    private String code;
+
+}
+/**
+ * 微信登录 请求url接受返回参数
+ *
+ * @author weiZiHao
+ * @date 2020/9/11
+ */
+public class WeChatUtil {
+
+    public static String httpRequest(String requestUrl, String requestMethod, String output) {
+        try {
+            URL url = new URL(requestUrl);
+            HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+            connection.setDoOutput(true);
+            connection.setDoInput(true);
+            connection.setUseCaches(false);
+            if (null != output) {
+                OutputStream outputStream = connection.getOutputStream();
+                outputStream.write(output.getBytes("utf-8"));
+                outputStream.close();
+            }
+            // 从输入流读取返回内容
+            InputStream inputStream = connection.getInputStream();
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "utf-8");
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+            String str = null;
+            StringBuffer buffer = new StringBuffer();
+            while ((str = bufferedReader.readLine()) != null) {
+                buffer.append(str);
+            }
+            bufferedReader.close();
+            inputStreamReader.close();
+            inputStream.close();
+            inputStream = null;
+            connection.disconnect();
+            return buffer.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+}
+###### 获取手机号登录处理
+	!!!!!!!!!!!!!!!!!!!!!!方法
+    /**
+     * 用户微信登录 获得手机号
+     *
+     * @param req
+     * @param weChatIV
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("code2Session")
+    public JsonResult<TUser> code2Session(HttpServletRequest req, WeChatIV weChatIV) throws Exception {
+        if (weChatIV.getEncryptedData() == null) {
+            throw new PasswordNotMatchException("未授权");
+        }
+        //String code1 = req.getParameter("code");
+        //第一步：通过code换取网页授权access_token
+		//获取请求地址
+        String url = getUrlForUser(weChatIV.getCode());
+		//请求 获取返回参数
+        String getBack = WeChatUtil.httpRequest(url, "get", null);
+		//转json
+        JSONObject jsonObject = JSONObject.parseObject(getBack);
+        Map<String, String> map = new HashMap<>();
+		//openid
+        map.put("openid", jsonObject.getString("openid"));
+		//unionid
+        map.put("unionid", jsonObject.getString("unionid"));
+		//获取手机号的session_key
+        map.put("session_key", jsonObject.getString("session_key"));
+        String sessionkey = jsonObject.getString("session_key");
+        //第二步: 解密 获取手机号
+        byte[] encrypData = Base64Utils.decodeFromString(weChatIV.getEncryptedData());
+        byte[] ivData = Base64Utils.decodeFromString(weChatIV.getIv());
+        byte[] sessionKey = Base64Utils.decodeFromString(sessionkey);
+        AlgorithmParameterSpec ivSpec = new IvParameterSpec(ivData);
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        SecretKeySpec keySpec = new SecretKeySpec(sessionKey, "AES");
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);// 设置为解密模式
+        String resultString = new String(cipher.doFinal(encrypData), "UTF-8");
+		//解密后
+        JSONObject object = JSONObject.parseObject(resultString);
+        map.put("phone", object.getString("phoneNumber"));// 拿到手机号码
+		//登录逻辑 用户唯一鉴别可为openid unionid phone
+        TUser dao = loginUser(map.get("phone"));
+        req.setAttribute("phone", map.get("phone"));
+        return new JsonResult<>(OK, dao);
+    }
+######获取用户信息登录 头像昵称
+    /**
+     * 微信登录
+     *
+     * @param weChatIV code
+     * @return
+     */
+    @RequestMapping("login")
+    public JsonResult<TWechat> login(WeChatIV weChatIV) {
+        System.err.println("weChatIV:" + weChatIV);
+        /**
+         * 得到openid access_token
+         */
+        String url = getUrl(weChatIV.getCode());
+        String getBack = WeChatUtil.httpRequest(url, "get", null);
+        JSONObject jsonObject = JSONObject.parseObject(getBack);
+        String openid = jsonObject.get("openid").toString();
+        String accessToken = jsonObject.get("access_token").toString();
+        /**
+         * 使用access_token与openid得到用户信息
+         */
+        String urlForUser = getUrlForUser(openid, accessToken);
+        String userBack = WeChatUtil.httpRequest(urlForUser, "get", null);
+        JSONObject user = JSONObject.parseObject(userBack);
+        /**
+         * 登陆逻辑 里面有openid  user.get("openid").toString()
+         */
+        TWechat tWechat = getUser(user);
+        return new JsonResult<>(OK, tWechat);
+    }
+######openid登录处理
+    /**
+     * 用户微信登录
+     *
+     * @param code
+     * @param request
+     * @return
+     */
+    @RequestMapping("userLogin/{code}")
+    public JsonResult<TUser> weChatUserLogin(@PathVariable("code") String code, HttpServletRequest request) {
+        //路径
+        String url = getUrl(code);
+        //返回值
+        String getBack = WeChatUtil.httpRequest(url, "get", null);
+        //转为json
+        JSONObject jsonObject = JSONObject.parseObject(getBack);
+        System.err.println(jsonObject);
+        //得到openid 存入会话
+        String openid = jsonObject.get("openid").toString();
+        System.err.println("openId:" + openid);
+        request.setAttribute("openid", openid);
+        //查询用户
+        QueryWrapper<TUser> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("OPEN_ID", openid);
+        return new JsonResult<>(OK, tUserService.getOne(queryWrapper));
+    }
+######拼接请求url
+    /**
+     * 拼接Url
+     * https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
+     * @param code
+     * @return
+     */
+    private String getUrlForUser(String code) {
+        String start = "https://api.weixin.qq.com/sns/jscode2session?appid=";
+        String next = "&secret=";
+        String again = "&js_code=";
+        String end = "&grant_type=authorization_code";
+        String url = start + userAppId + next + userAppSecret + again + code + end;
+        return url;
+    }
+    /**
+     * 得到用户信息的 接口地址
+     * //https://api.weixin.qq.com/sns/userinfo?access_token=ACCESS_TOKEN&openid=OPENID&lang=zh_CN
+     *
+     * @param
+     * @return
+     */
+    private String getUrlForUser(String openid, String token) {
+        String start = "https://api.weixin.qq.com/sns/userinfo?access_token=";
+        String next = "&openid=";
+        String end = "&lang=zh_CN";
+        String url = start + token + next + openid + end;
+        return url;
+    }
+
+
+
+##################################微信支付
+
+######前端支付请求发起
+    /**
+     * 微信支付
+     *
+     * @param tCommodity商品属性 commodityId courierId
+     * @return
+     */
+    @RequestMapping("pay")
+    public JsonResult<String> wePay(TCommodity tCommodity, WeChatIV weChatIV) {
+        //写入各种ID
+        WeChatConfig config = new WeChatConfig();
+        WXPay wxpay = new WXPay(config);
+        //openId
+        String openId = getOpenId(weChatIV);
+        /**
+         * 商品Id写入缓存
+         */
+		//@Autowired
+		//public RedisTemplate redisTemplate;
+        ValueOperations<String, Object> valueOperations = redisTemplate.opsForValue();
+        valueOperations.set(openId, tCommodity, 3600, TimeUnit.SECONDS);
+        //时间偏移量
+        Long now = System.currentTimeMillis();
+        //商品数据
+		//微信支付 单位分
+        TCommodity dao = tCommodityService.getById(tCommodity.getCommodityId());
+        Double dub = dao.getMoney() * 100;
+        int i = dub.intValue();
+        Integer money = Integer.valueOf(i);
+        //向微信请求参数
+        Map<String, String> data = new HashMap<String, String>();
+        data.put("body", dao.getCommodityName());//支付标题
+        data.put("out_trade_no", now.toString());//订单唯一 时间戳 标准北京时间
+        data.put("device_info", "");//  设备号
+        data.put("fee_type", "CNY");//货币种类
+        //Integer money = dao.getMoney() * 100;
+        data.put("total_fee", money.toString());//钱 //单位分
+        data.put("spbill_create_ip", "49.233.36.209");//发起支付的服务器地址或者客户端地址
+        data.put("notify_url", "https://www.shyunhai.com/jixiang/weChat/getBack");//微信回调路径
+        data.put("trade_type", "JSAPI");  // JSAPI--JSAPI支付（或小程序支付）、NATIVE--Native支付、APP--app支付，MWEB--H5支付
+        data.put("product_id", "12");//商品ID
+        data.put("openid", openId);//openid
+        //向前端返回支付json 生成新签名
+        String jsonObject = null;
+        try {
+            Map<String, String> resp = wxpay.unifiedOrder(data);
+            resp.put("time", now.toString());
+            String prepayId = resp.get("prepay_id");
+            /**
+             * 生成新签名的map
+             */
+            Map<String, String> map = new HashMap<>();
+            map.put("appId", config.getAppID());
+            map.put("timeStamp", now.toString());
+            map.put("nonceStr", now.toString());
+            map.put("package", "prepay_id=" + prepayId);
+            map.put("signType", "MD5");
+            //新签名
+            String str = getSign(map, key);
+            map.put("paySign", str);
+            jsonObject = JSONObject.toJSONString(map);
+        } catch (Exception e) {
+            throw new PasswordNotMatchException("支付失败!");
+        }
+        return new JsonResult<>(OK, jsonObject);
+    }
+######支付回调 前面请求时设置了回调地址
+    /**
+     * 微信支付回调
+     *
+     * @param
+     * @return
+     * @throws Exception
+     */
+
+    @RequestMapping(value = "getBack", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public String getBack(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        /**
+         * 接受xml参数
+         */
+        InputStream inStream = request.getInputStream();
+        ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len = 0;
+        while ((len = inStream.read(buffer)) != -1) {
+            outSteam.write(buffer, 0, len);
+        }
+        String notifyData = new String(outSteam.toByteArray(), "utf-8");
+        WeChatConfig config = new WeChatConfig();
+        WXPay wxpay = new WXPay(config);
+        /**
+         * 转map
+         */
+        Map<String, String> notifyMap = WXPayUtil.xmlToMap(notifyData);  // 转换成map
+        outSteam.close();
+        inStream.close();
+        /**
+         * 返回 对比签名
+         */
+        Map<String, String> return_data = new HashMap<String, String>();
+        if (wxpay.isPayResultNotifySignatureValid(notifyMap)) {
+            // 对比签名 签名正确
+			//SUCCESS代表支付成功
+            if ("SUCCESS".equals(notifyMap.get("result_code"))) {
+				//缓存拿到商品
+                TCommodity tCommodity = (TCommodity) redisTemplate.opsForValue().get(notifyMap.get("openid"));
+                /**
+                 * 支付回调成功后逻辑
+                 */
+                if (tCommodity != null) {
+                    TCommodity dao = tCommodityService.getById(tCommodity.getCommodityId());
+                    QueryWrapper<TChance> queryWrapper = new QueryWrapper<>();
+                    queryWrapper.eq("COURIER_ID", tCommodity.getCourierId());
+                    TChance tChance = tChanceService.getOne(queryWrapper);
+                    Integer add = dao.getGift() + dao.getQuantity();
+                    Integer sum = tChance.getChanceNumber() + add;
+                    tChance.setChanceNumber(sum);
+                    /**
+                     * 充值记录
+                     */
+                    TCommodityRecord tCommodityRecord = new TCommodityRecord();
+                    tCommodityRecord.setCommodityId(tCommodity.getCommodityId());
+                    tCommodityRecord.setCourierId(tCommodity.getCourierId());
+                    tCommodityRecord.setMoney(dao.getMoney());
+                    tCommodityRecord.setCommodityName(dao.getCommodityName());
+                    tCommodityRecord.setCreateTime(new Date());
+                    tCommodityRecordService.saveOrUpdate(tCommodityRecord);
+                    tChanceService.saveOrUpdate(tChance);
+                    redisTemplate.delete(notifyMap.get("openid"));
+                    /**
+                     * 返回
+                     */
+                    return_data.put("return_code", "SUCCESS");
+                    return_data.put("return_msg", "OK");
+                    return WXPayUtil.mapToXml(return_data);
+                }
+            } else {
+                /**
+                 * 返回失败
+                 */
+                System.err.println("充值失败!");
+                return_data.put("return_code", "FAIL");
+                return_data.put("return_msg", "return_code不正确");
+                return WXPayUtil.mapToXml(return_data);
+            }
+            // 进行处理。
+            // 注意特殊情况：订单已经退款，但收到了支付结果成功的通知，不应把商户侧订单状态从退款改成支付成功
+            return_data.put("return_code", "FAIL");
+            return_data.put("return_msg", "return_code不正确");
+            return WXPayUtil.mapToXml(return_data);
+        } else {
+            // 签名错误，如果数据里没有sign字段，也认为是签名错误
+            throw new PasswordNotMatchException("充值失败,请联系管理员");
+        }
+    }
+######获取openid
+    /**
+     * 获取openId
+     *
+     * @param weChatIV code码
+     * @return
+     */
+    //https://api.weixin.qq.com/sns/jscode2session?
+    public String getOpenId(WeChatIV weChatIV) {
+        //路径
+        String url = getUrl(weChatIV.getCode());
+        //返回值
+        String getBack = WeChatUtil.httpRequest(url, "get", null);
+        //转为json
+        JSONObject jsonObject = JSONObject.parseObject(getBack);
+        //得到openid 存入会话
+        String openid = jsonObject.get("openid").toString();
+        String sessionKey = jsonObject.get("session_key").toString();
+        //String unionid = jsonObject.get("unionid").toString();
+        return openid;
+    }
+####### 生成签名
+    /**
+     * 生成新的签名
+     *
+     * @param data
+     * @param key
+     * @return
+     * @throws Exception
+     */
+    public String getSign(final Map<String, String> data, String key) throws Exception {
+        Set<String> keySet = data.keySet();
+        String[] keyArray = keySet.toArray(new String[keySet.size()]);
+        Arrays.sort(keyArray);
+        StringBuilder sb = new StringBuilder();
+        for (String k : keyArray) {
+            if (k.equals(WXPayConstants.FIELD_SIGN)) {
+                continue;
+            }
+            if (data.get(k).trim().length() > 0) // 参数值为空，则不参与签名
+                sb.append(k).append("=").append(data.get(k).trim()).append("&");
+        }
+        sb.append("key=").append(key);
+        return MD5(sb.toString()).toUpperCase();
+    }
+####### MD5加密
+    /**
+     * MD5加密
+     *
+     * @param data
+     * @return
+     * @throws Exception
+     */
+    public static String MD5(String data) throws Exception {
+        java.security.MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] array = md.digest(data.getBytes("UTF-8"));
+        StringBuilder sb = new StringBuilder();
+        for (byte item : array) {
+            sb.append(Integer.toHexString((item & 0xFF) | 0x100).substring(1, 3));
+        }
+        return sb.toString().toUpperCase();
+    }

@@ -1,0 +1,171 @@
+<style>
+    #febs-shop xm-select {
+        min-height: 30px;
+        line-height: 30px;
+    }
+
+    #febs-shop xm-select > .xm-label .scroll .label-content {
+        display: flex;
+        padding: 0 30px 0 10px;
+    }
+
+</style>
+<div class="layui-fluid layui-anim febs-anim" id="febs-shop" lay-title="用户管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="user-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">公司名称</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" required name="companyName" autocomplete="off"
+                                                   class="layui-input">
+                                        </div>
+                                    </div>
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">手机号</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="phone"  class="layui-input">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary febs-button-blue-plain table-action"
+                                     id="query">
+                                    <i class="layui-icon">&#xe615;</i>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="userTable" lay-data="{id: 'userTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="user-stated">
+    {{#
+    let state = {
+    0: {title: '审核中', color: 'green'},
+    1: {title: '通过', color: 'orange'},
+    2: {title: '未通过', color: 'black'},
+    3: {title: '停用', color: 'red'}
+    }[d.stateId];
+    }}
+    <span class="layui-badge febs-bg-{{state.color}}" style="width: 50px">{{ state.title }}</span>
+</script>
+<script type="text/html" id="user-option">
+    <button lay-event="no" type="button" style="width: 50px;background-color: black" class="layui-btn febs-bg-orange layui-btn-xs">
+        <i class="layui-icon febs-edit-area febs-white">不通过</i></button>
+    <button lay-event="yes" type="button" style="width: 50px;" class="layui-btn febs-bg-blue layui-btn-xs">
+        <i class="layui-icon febs-edit-area febs-white">通过</i></button>
+    <button type="button" lay-event="stop" style="width: 50px;" class="layui-btn febs-bg-red layui-btn-xs">
+        <i class="layui-icon febs-edit-area febs-white">停用</i></button>
+</script>
+<script type="text/html" id="img">
+    <img src="{{d.license}}">
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'xmSelect'], function () {
+        let $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            $view = $('#febs-shop'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            sortObject = {field: 'createTime', type: null},
+            tableIns;
+
+        form.render();
+
+        initTable();
+
+        laydate.render({
+            elem: '#user-createTime',
+            range: true,
+            trigger: 'click',
+        });
+
+
+        table.on('tool(userTable)', function (obj) {
+            let data = obj.data,
+                layEvent = obj.event;
+            if (layEvent === 'no') {
+                merchantUpdate(data.merchantId,2)
+            }
+            if (layEvent === 'yes') {
+                merchantUpdate(data.merchantId,1)
+
+            }
+            if (layEvent === 'stop') {
+                merchantUpdate(data.merchantId,3)
+            }
+        });
+
+        table.on('sort(userTable)', function (obj) {
+            console.log(obj)
+            sortObject = obj;
+            tableIns.reload({
+                initSort: obj,
+                where: $.extend(getQueryParams(), {
+                    field: obj.field,
+                    order: obj.type
+                })
+            });
+        });
+
+        $query.on('click', function () {
+            let params = $.extend(getQueryParams(), {field: sortObject.field, order: sortObject.type});
+            tableIns.reload({where: params, page: {curr: 1}});
+        });
+
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'userTable',
+                url: ctx + 'merchant/list',
+                toolbar: '#',
+                defaultToolbar: ['filter','print'],
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'merchantId',title: 'ID',minWidth: 20},
+                    {field: 'userName', title: '姓名', minWidth: 100},
+                    {field: 'phone', title: '手机号',minWidth: 120},
+                    {field: 'license', title: '图片',minWidth: 120},
+                    {field: 'companyName', title: '公司名称', minWidth: 80, sort: true},
+                    {field: '', title: '地址', minWidth: 80,templet: function (d) {
+                            return showWare(d.site,d.region)}},
+                    {field: 'stateId',title: '状态',minWidth: 50,templet:'#user-stated'},
+                    {field: 'createTime', title: '创建时间', minWidth: 180, sort: true},
+                    {title: '操作', toolbar: '#user-option', minWidth: 240,fixed:'right'}
+                ]]
+            });
+        }
+        //拼接地区和地址
+        function showWare(res1,res2){
+            var str = res2+"<br>"+res1;
+            return str;
+        }
+        function getQueryParams(flag) {
+            let params = $searchForm.serializeJson();
+            return params;
+        }
+
+        function merchantUpdate(merchantId,stateId) {
+            febs.get(ctx + 'merchant/update/' + merchantId+"/"+stateId, null, function () {
+                table.reload('userTable');
+            });
+        }
+
+    })
+</script>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cc.mrbird.febs.frp.mapper.FrpMapper">
+    <sql id="countfrpDetailSql" >
+        SELECT
+        COUNT(1)
+        FROM
+        t_frp t
+        WHERE 1 = 1
+        <if test="frp.name != null and frp.name != ''">
+            AND t.NAME = #{frp.name}
+        </if>
+    </sql>
+
+    <sql id="findtfrpDetailSql">
+        SELECT
+        t.ID,
+        t.NAME,
+        t.TYPE,
+        t.PRICE
+        FROM
+        t_frp t
+        WHERE 1 = 1
+        <if test="frp.name != null and frp.name != ''">
+            AND t.NAME = #{frp.name}
+        </if>
+        GROUP BY
+        t.ID,
+        t.NAME,
+        t.TYPE,
+        t.PRICE
+    </sql>
+
+
+    <select id="countfrpDetail" parameterType="frp" resultType="long">
+        <include refid="countfrpDetailSql"/>
+    </select>
+
+    <select id="findtfrpDetailPage" parameterType="frp" resultType="frp">
+        <include refid="findtfrpDetailSql" />
+    </select>
+</mapper>

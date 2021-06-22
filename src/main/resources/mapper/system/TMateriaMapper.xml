@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cc.mrbird.febs.material.mapper.TMateriaMapper">
+    <sql id="counttMateriaDetailSql" >
+        SELECT
+        COUNT(1)
+        FROM
+        t_materia  m
+        WHERE 1 = 1
+        <if test="tMateria.materialName != null and tMateria.materialName != ''">
+            AND m.MATERIAL_NAME = #{tMateria.materialName}
+        </if>
+        <if test="tMateria.contact != null and tMateria.contact != ''">
+            AND m.CONTACT = #{tMateria.contact}
+        </if>
+        <if test="tMateria.phone != null and tMateria.phone != ''">
+            AND m.PHONE = #{tMateria.phone}
+        </if>
+        <if test="tMateria.area != null and tMateria.area != ''">
+            AND m.AREA = #{tMateria.area}
+        </if>
+        <if test="tMateria.address != null and tMateria.address != ''">
+            AND m.ADDRESS = #{tMateria.address}
+        </if>
+        <if test="tMateria.salesArea != null and tMateria.salesArea !=''">
+            And m.SALES_AREA =#{tMateria.salesArea}
+        </if>
+        <if test="tMateria.bindingGoods != null and tMateria.bindingGoods !=''">
+            And m.BINDING_GOODS =#{tMateria.bindingGoods}
+        </if>
+    </sql>
+
+    <sql id="findtMateriaDetailPageSql">
+        SELECT
+        m.MATERIAL_ID,
+        m.MATERIAL_NAME,
+        m.CONTACT,
+        m.PHONE,
+        m.AREA,
+        m.ADDRESS,
+        m.SALES_AREA,
+        m.BINDING_GOODS,
+        m.STATUS
+        FROM
+        t_materia  m
+        WHERE 1 = 1
+        <if test="tMateria.materialName != null and tMateria.materialName != ''">
+            AND m.MATERIAL_NAME = #{tMateria.materialName}
+        </if>
+        <if test="tMateria.contact != null and tMateria.contact != ''">
+            AND m.CONTACT = #{tMateria.contact}
+        </if>
+        <if test="tMateria.phone != null and tMateria.phone != ''">
+            AND m.PHONE = #{tMateria.phone}
+        </if>
+        <if test="tMateria.area != null and tMateria.area != ''">
+            AND m.AREA = #{tMateria.area}
+        </if>
+        <if test="tMateria.address != null and tMateria.address != ''">
+            AND m.ADDRESS = #{tMateria.address}
+        </if>
+        <if test="tMateria.salesArea != null and tMateria.salesArea !=''">
+            And m.SALES_AREA =#{tMateria.salesArea}
+        </if>
+        <if test="tMateria.bindingGoods != null and tMateria.bindingGoods !=''">
+            And m.BINDING_GOODS =#{tMateria.bindingGoods}
+        </if>
+        GROUP BY
+        m.MATERIAL_ID,
+        m.MATERIAL_NAME,
+        m.CONTACT,
+        m.PHONE,
+        m.AREA,
+        m.ADDRESS,
+        m.SALES_AREA,
+        m.BINDING_GOODS,
+        m.STATUS
+    </sql>
+
+
+
+    <select id="counttMateriaDetail" parameterType="tMateria" resultType="long">
+        <include refid="counttMateriaDetailSql"/>
+    </select>
+
+    <select id="findtMateriaDetailPage" parameterType="tMateria" resultType="tMateria">
+        <include refid="findtMateriaDetailPageSql" />
+    </select>
+</mapper>

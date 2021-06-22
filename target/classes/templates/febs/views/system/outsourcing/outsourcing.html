@@ -1,0 +1,89 @@
+<style>
+    #febs-user xm-select {
+        min-height: 30px;
+        line-height: 30px;
+    }
+
+    #febs-user xm-select > .xm-label .scroll .label-content {
+        display: flex;
+        padding: 0 30px 0 10px;
+    }
+</style>
+<form class="layui-form">
+    <div class="layui-form-item">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">商品id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="outsourcingId" data-th-value="${out.outsourcingId}">
+            </div>
+        </div>
+        <textarea id="content" name="outsourcingNews" lay-verify="content" style="display: none;">
+            [[${out.outsourcingNews}]]
+        </textarea>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="*">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="reset">重置</button>
+        </div>
+    </div>
+</form>
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'validate', 'xmSelect', 'form', 'layedit'], function () {
+        var form = layui.form,
+            $ = layui.$,
+            layedit = layui.layedit,
+            febs = layui.febs,
+            out = [[${out}]];
+
+        layedit.set({
+            uploadImage: {
+                url: 'image/uploadConImage' //接口url
+                , type: 'POST' //默认post
+            }
+        });
+
+        var index = layedit.build('content', {
+            height: 450,
+            tool: [
+                'strong' //加粗
+                , 'italic' //斜体
+                , 'underline' //下划线
+                , 'del' //删除线
+                , '|' //分割线
+                , 'left' //左对齐
+                , 'center' //居中对齐
+                , 'right' //右对齐
+                , 'link' //超链接
+                , 'unlink' //清除链接
+                , 'face' //表情
+                , 'image' //插入图片
+                , 'help' //帮助
+            ]
+        }); //建立编辑器
+
+        form.verify({
+            content: function (value) {
+                layedit.sync(index);
+            }
+        });
+
+        form.on('submit(reset)', function () {
+            layui.layedit.clearContent(index);
+        });
+        form.on('submit(*)', function (data) {
+            if(data.field.outsourcingNews==out.outsourcingNews){
+                febs.alert.warn("数据未做任何修改");
+                return false;
+            }else {
+                febs.post(ctx + 'outsourcing/UpdateOutsourcing', data.field, function () {
+                    layer.closeAll();
+                    febs.alert.success(' 数据修改成功');
+                    setTimeout('window.location.reload()',800);
+                });
+                return false;
+            }
+            return false;
+        });
+    });
+</script>

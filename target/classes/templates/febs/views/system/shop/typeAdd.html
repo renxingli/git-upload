@@ -1,0 +1,46 @@
+<div class="layui-fluid" id="all">
+<form class="layui-form" id="add-type">
+    <div class="layui-fluid">
+        <div class="layui-form-item">
+            <label class="layui-form-label">类别名称：</label>
+            <div class="layui-input-block">
+                <input type="text" required lay-verify="required" name="typeName" maxlength="50" autocomplete="off"
+                       class="layui-input">
+            </div>
+            <br><br>
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="*">添加</button>
+                <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="reset">重置</button>
+            </div>
+        </div>
+    </div>
+</form>
+</div>
+
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'xmSelect'], function () {
+        let $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            dropdown = layui.dropdown,
+            $view = $('#all'),
+            $searchForm = $view.find('form'),
+            $reset = $view.find('#reset');
+
+        $reset.on('click', function () {
+            $searchForm[0].reset();
+        });
+        form.render();
+        form.on('submit(*)', function (data) {
+            febs.post(ctx + 'shopType/type/add', data.field, function () {
+                layer.close(layer.index);
+                febs.alert.success('新增类别成功');
+                parent.layui.table.reload('typeTable');
+            });
+            return false;
+        });
+
+    });
+</script>

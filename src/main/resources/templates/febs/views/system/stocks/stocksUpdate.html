@@ -1,0 +1,94 @@
+<style>
+    #user-update {
+        padding: 20px 25px 25px 0;
+    }
+</style>
+<div class="layui-fluid" id="user-update">
+    <form class="layui-form" action="" lay-filter="stock-update-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="rawmaterialId" data-th-value="${stocks.rawmaterialId}">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">名称：</label>
+            <div class="layui-input-block">
+                <input type="text" name="rawmaterialName" maxlength="10" data-th-value="${stocks.rawmaterialName}"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">推荐长度：</label>
+            <div class="layui-input-block">
+                <input type="text" name="recommendLength" maxlength="10" data-th-value="${stocks.recommendLength}"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">最小长度：</label>
+            <div class="layui-input-block">
+                <input type="text" name="minLength" maxlength="10" data-th-value="${stocks.minLength}"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">最大长度：</label>
+            <div class="layui-input-block">
+                <input type="text" name="maxLength" maxlength="10" data-th-value="${stocks.maxLength}"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">间隔长度：</label>
+            <div class="layui-input-block">
+                <input type="text" name="intervalLength" maxlength="10" data-th-value="${stocks.intervalLength}"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="stock-update-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'xmSelect', 'validate'], function () {
+        let $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            form = layui.form,
+            stocks = [[${stocks}]],
+            validate = layui.validate;
+
+        form.verify(validate);
+        form.render();
+
+        initUserValue();
+
+        function initUserValue() {
+            form.val("stock-update-form", {
+                "rawmaterialName": stocks.rawmaterialName,
+                "recommendLength": stocks.recommendLength,
+                "minLength": stocks.minLength,
+                "maxLength": stocks.maxLength,
+                "intervalLength": stocks.intervalLength,
+            });
+        }
+
+        form.on('submit(stock-update-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, stocks)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }
+            febs.post(ctx + 'stocks/stocks/update', data.field, function () {
+                console.log(data.field)
+                layer.closeAll();
+                febs.alert.success('数据修改成功');
+                $('#febs-stock').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

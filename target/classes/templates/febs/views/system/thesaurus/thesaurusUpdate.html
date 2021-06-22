@@ -1,0 +1,70 @@
+<style>
+    #user-update {
+        padding: 20px 25px 25px 0;
+    }
+</style>
+<div class="layui-fluid" id="user-update">
+    <form class="layui-form" action="" lay-filter="thesaurus-update-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="thesaurusId" data-th-value="${thesaurus.thesaurusId}">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">关键词：</label>
+            <div class="layui-input-block">
+                <input type="text" name="thesaurusName" maxlength="10" data-th-value="${thesaurus.thesaurusName}"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">同义词：</label>
+            <div class="layui-input-block">
+                <input type="text" name="thesaurusNames" maxlength="10" data-th-value="${thesaurus.thesaurusNames}"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="thesaurus-update-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'xmSelect', 'validate'], function () {
+        let $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            form = layui.form,
+            thesaurus = [[${thesaurus}]],
+            validate = layui.validate;
+
+        form.verify(validate);
+        form.render();
+
+        initUserValue();
+
+        function initUserValue() {
+            form.val("thesaurus-update-form", {
+                "thesaurusName": thesaurus.thesaurusName,
+                "thesaurusNames": thesaurus.thesaurusNames,
+            });
+        }
+
+        form.on('submit(thesaurus-update-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, thesaurus)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }
+            febs.post(ctx + 'thesaurus/thesaurus/update', data.field, function () {
+                console.log(data.field)
+                layer.closeAll();
+                febs.alert.success('数据修改成功');
+                $('#febs-thesaurus').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

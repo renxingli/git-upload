@@ -1,0 +1,49 @@
+<style>
+    #shop-add-guige {
+        padding: 20px 25px 25px 0;
+    }
+</style>
+<div class="layui-fluid" id="shop-add-g">
+    <form class="layui-form" action="" lay-filter="shop-add-guige-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">商品id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="commodityId" data-th-value="${commodityId}">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品规格：</label>
+            <div class="layui-input-block">
+                <input type="text" required lay-verify="required"  name="specificationsName" maxlength="50" autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="shop-addgg-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+<script data-th-inline="javascript" type="text/javascript">
+    layui.use(['febs', 'form', 'validate', 'xmSelect'], function () {
+        let $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            $view = $('#shop-add-g'),
+            form = layui.form,
+            xmSelect = layui.xmSelect,
+            validate = layui.validate;
+
+        form.render();
+
+
+        form.on('submit(shop-addgg-form-submit)', function (data) {
+            febs.post(ctx + 'specifications/add', data.field, function () {
+                febs.alert.success('新增规格成功');
+                $('#shop-update').find('#reset').trigger('click');
+                parent.layui.table.reload('userTable');
+            });
+            return false;
+        });
+
+    });
+</script>

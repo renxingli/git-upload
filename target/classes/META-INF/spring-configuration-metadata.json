@@ -1,0 +1,46 @@
+{
+  "groups": [
+    {
+      "name": "febs",
+      "type": "cc.mrbird.febs.common.properties.FebsProperties",
+      "sourceType": "cc.mrbird.febs.common.properties.FebsProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "febs.code",
+      "type": "cc.mrbird.febs.common.properties.ValidateCodeProperties",
+      "sourceType": "cc.mrbird.febs.common.properties.FebsProperties"
+    },
+    {
+      "name": "febs.enable-redis-cache",
+      "type": "java.lang.Boolean",
+      "description": "是否开启Redis缓存，true开启，false关闭 为false时，采用基于内存的ehcache缓存",
+      "sourceType": "cc.mrbird.febs.common.properties.FebsProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "febs.max-batch-insert-num",
+      "type": "java.lang.Integer",
+      "description": "批量插入提交commit数据量",
+      "sourceType": "cc.mrbird.febs.common.properties.FebsProperties",
+      "defaultValue": 1000
+    },
+    {
+      "name": "febs.shiro",
+      "type": "cc.mrbird.febs.common.properties.ShiroProperties",
+      "sourceType": "cc.mrbird.febs.common.properties.FebsProperties"
+    },
+    {
+      "name": "febs.swagger",
+      "type": "cc.mrbird.febs.common.properties.SwaggerProperties",
+      "sourceType": "cc.mrbird.febs.common.properties.FebsProperties"
+    },
+    {
+      "name": "spring.application.package-time",
+      "type": "java.lang.String",
+      "description": "应用编译打包时间戳."
+    }
+  ],
+  "hints": []
+}

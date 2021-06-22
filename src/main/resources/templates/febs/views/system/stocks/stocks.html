@@ -1,0 +1,210 @@
+<style>
+    #febs-stock xm-select {
+        min-height: 30px;
+        line-height: 30px;
+    }
+    #febs-stock xm-select > .xm-label .scroll .label-content {
+        display: flex;
+        padding: 0 30px 0 10px;
+    }
+</style>
+<div class="layui-fluid layui-anim febs-anim" id="febs-stock" lay-title="原料尺寸管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="user-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">原料名称</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" required name="rawmaterialName" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary febs-button-blue-plain table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary febs-button-green-plain table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="stockTable" lay-data="{id: 'stockTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="user-status">
+    <span class="layui-badge febs-bg-{{status.color}}">{{ status.title }}</span>
+</script>
+<script type="text/html" id="user-sex">
+    <span>{{ sex.title }}</span>
+</script>
+<script type="text/html" id="stock-option">
+    <a lay-event="edit"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'xmSelect'], function () {
+        let $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            dropdown = layui.dropdown,
+            $view = $('#febs-stock'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            sortObject = {field: 'createTime', type: null},
+            tableIns,
+            createTimeFrom,
+            createTimeTo;
+
+        form.render();
+
+        initTable();
+
+        laydate.render({
+            elem: '#user-createTime',
+            range: true,
+            trigger: 'click'
+        });
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                let checkStatus = table.checkStatus('stockTable');
+                if (name === 'add') {
+                    febs.modal.open('新增原料', 'system/stocks/add', {
+                        btn: ['提交', '重置'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#user-add').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#user-add').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+                if (name === 'delete') {
+                    if (!checkStatus.data.length) {
+                        febs.alert.warn('请选择需要删除的材料');
+                    } else {
+                        febs.modal.confirm('删除材料', '确定删除该材料？', function () {
+                            let rawmaterialIds = [];
+                            let gg = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                rawmaterialIds.push(item.rawmaterialId)
+                            });
+                            deleteUsers(rawmaterialIds.join(','));
+                        });
+                    }
+                }
+            },
+            options: [{
+                name: 'add',
+                title: '新增原料',
+                perms: 'user:add'
+            }, {
+                name: 'delete',
+                title: '删除商品',
+                perms: 'user:delete'
+            }]
+        });
+        table.on('tool(stockTable)', function (obj) {
+            let data = obj.data,
+                layEvent = obj.event;
+            if (layEvent === 'del') {
+                febs.modal.confirm('删除材料', '确定删除该材料？', function () {
+                    deleteUsers(data.rawmaterialId);
+                });
+            }
+            if (layEvent === 'edit') {
+                febs.modal.open('修改材料', 'system/stocks/update/' + data.rawmaterialId, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#user-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+        });
+
+        table.on('sort(stockTable)', function (obj) {
+            sortObject = obj;
+            tableIns.reload({
+                initSort: obj,
+                where: $.extend(getQueryParams(), {
+                    field: obj.field,
+                    order: obj.type
+                })
+            });
+        });
+
+        $query.on('click', function () {
+            let params = $.extend(getQueryParams(), {field: sortObject.field, order: sortObject.type});
+            tableIns.reload({where: params, page: {curr: 1}});
+        });
+
+        $reset.on('click', function () {
+            $searchForm[0].reset();
+            sortObject.type = 'null';
+            createTimeTo = null;
+            createTimeFrom = null;
+            tableIns.reload({where: null, page: {curr: 1}, initSort: sortObject});
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'stockTable',
+                url: ctx + 'stocks/list',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'rawmaterialName', title: '名称', minWidth: 100},
+                    {field: 'recommendLength', title: '推荐长度', minWidth: 80},
+                    {field: 'minLength', title: '最小长度', minWidth: 80},
+                    {field: 'maxLength', title: '最大长度', minWidth: 80},
+                    {field: 'intervalLength', title: '间隔长度', minWidth: 80},
+                    {title: '操作', toolbar: '#stock-option', minWidth: 140}
+                ]]
+            });
+        }
+
+        function getQueryParams() {
+            let params = $searchForm.serializeJson();
+            let createTime = params.time;
+            if (createTime) {
+                createTimeFrom = createTime.split(' - ')[0];
+                createTimeTo = createTime.split(' - ')[1];
+            }
+            params.invalidate_ie_cache = new Date();
+            params.createTime = createTimeFrom;
+            params.modifyTime = createTimeTo;
+            return params;
+        }
+
+        function deleteUsers(rawmaterialIds) {
+            febs.get(ctx + 'stocks/stocks/delete/' + rawmaterialIds, null, function () {
+                febs.alert.success('删除材料成功');
+                $query.click();
+            });
+        }
+    })
+</script>

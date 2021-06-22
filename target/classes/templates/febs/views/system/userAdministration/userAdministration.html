@@ -1,0 +1,113 @@
+<style>
+    #febs-user xm-select {
+        min-height: 30px;
+        line-height: 30px;
+    }
+
+    #febs-user xm-select > .xm-label .scroll .label-content {
+        display: flex;
+        padding: 0 30px 0 10px;
+    }
+</style>
+<div class="layui-fluid layui-anim febs-anim" id="febs-user" lay-title="收货地址">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="user-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                            </div>
+                            <table lay-filter="userTable" lay-data="{id: 'userTable'}"></table>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="admin-option">
+    <a lay-event="yes"><i
+            class="layui-icon febs-edit-area febs-green">&#xe889;</i></a>
+    <a lay-event="no"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe88c;</i></a>
+</script>
+
+<script type="text/html" id="user-statu">
+    {{#
+    let state = {
+    0: {title: '审核中', color: 'green'},
+    1: {title: '通过', color: 'orange'},
+    2: {title: '拒绝', color: 'red'}
+    }[d.stateId];
+    }}
+    <span class="layui-badge febs-bg-{{state.color}}" style="width: 50px">{{ state.title }}</span>
+</script>
+<script data-th-inline="none" type="text/javascript">
+        layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'xmSelect'], function () {
+        let $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            dropdown = layui.dropdown,
+            $view = $('#febs-user'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            tableIns;
+
+        form.render();
+
+        initTable();
+
+        laydate.render({
+            elem: '#user-createTime',
+            range: true,
+            trigger: 'click'
+        });
+
+
+        table.on('tool(userTable)', function (obj) {
+            let data = obj.data,
+                layEvent = obj.event;
+            console.log(obj)
+            if (layEvent === 'yes') {
+                febs.modal.confirm('通过审核', '确定该信息通过？', function () {
+                    updateStatus(obj.data.shippingAddressId, 1);
+                });
+            }
+            if (layEvent === 'no') {
+                febs.modal.confirm('拒绝通过审核', '确定拒绝该信息通过？', function () {
+                    updateStatus(obj.data.shippingAddressId, 2);
+                });
+            }
+        });
+
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'userTable',
+                url: ctx + 'shippingAddress/list',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'realName', title: '联系人', minWidth: 100},
+                    {field: 'phone', title: '手机号', minWidth: 150},
+                    {field: 'region', title: '地区', minWidth: 200},
+                    {field: 'site', title: '详情地址', minWidth: 150},
+                    {title: '审核状态', templet: '#user-statu',fixed:'right'},
+                    {field: 'createTime', title: '创建时间', minWidth: 180, sort: true},
+                    {title: '操作', toolbar: '#admin-option', minWidth: 140,fixed:'right'}
+                ]]
+            });
+        }
+
+        function updateStatus(shippingAddressId, stateId) {
+            febs.get(ctx + 'update/status/' + shippingAddressId + '/' + stateId, null, function () {
+                parent.layui.table.reload('userTable');
+            });
+        }
+    });
+</script>

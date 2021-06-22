@@ -1,0 +1,83 @@
+<style>
+    #user-update {
+        padding: 20px 25px 25px 0;
+        height: 250px;
+    }
+</style>
+<div class="layui-fluid" id="user-update">
+    <form class="layui-form" action="" lay-filter="stock-update-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" data-th-value="${frp.id}">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">名称：</label>
+            <div class="layui-input-block">
+                <input type="text" name="name" maxlength="10" data-th-value="${frp.name}"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">类型：</label>
+            <div class="layui-input-block">
+                <select  name="type"  lay-verify=""   id="type" class="layui-input" data-th-value="${frp.type}">
+                    <option value="">请选择类型</option>
+                    <option value="材料"  >材料</option>
+                    <option value="工艺"   >工艺</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label ">价格：</label>
+            <div class="layui-input-block">
+                <input type="text" name="price" maxlength="10" data-th-value="${frp.price}"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="frp-update-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'xmSelect', 'validate'], function () {
+        let $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            form = layui.form,
+            frp = [[${frp}]],
+            validate = layui.validate;
+
+        form.verify(validate);
+        form.render();
+
+        initUserValue();
+
+        function initUserValue() {
+            form.val("stock-update-form", {
+                "name": frp.name,
+                "type": frp.type,
+                "price": frp.price,
+            });
+        }
+
+        form.on('submit(frp-update-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, frp)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }
+            febs.post(ctx + 'frp/frp/update', data.field, function () {
+                console.log(data.field)
+                layer.closeAll();
+                febs.alert.success('数据修改成功');
+                $('#febs-frp').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

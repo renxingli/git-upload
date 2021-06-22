@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cc.mrbird.febs.thesaurus.mapper.ThesaurusMapper">
+    <sql id="countthesaurusDetailSql" >
+        SELECT
+        COUNT(1)
+        FROM
+        t_thesaurus t
+        WHERE 1 = 1
+        <if test="thesaurus.thesaurusName != null and thesaurus.thesaurusName != ''">
+            AND t.THESAURUS_NAME = #{thesaurus.thesaurusName}
+        </if>
+        <if test="thesaurus.thesaurusNames != null and thesaurus.thesaurusNames != ''">
+            AND t.THESAURUS_NAMES = #{thesaurus.thesaurusNames}
+        </if>
+
+    </sql>
+
+    <sql id="findtthesaurusDetailSql">
+        SELECT
+        t.THESAURUS_ID,
+        t.THESAURUS_NAME,
+        t.THESAURUS_NAMES
+        FROM
+        t_thesaurus t
+        WHERE 1 = 1
+        <if test="thesaurus.thesaurusName != null and thesaurus.thesaurusName != ''">
+            AND t.THESAURUS_NAME = #{thesaurus.thesaurusName}
+        </if>
+        <if test="thesaurus.thesaurusNames != null and thesaurus.thesaurusNames != ''">
+            AND t.THESAURUS_NAMES = #{thesaurus.thesaurusNames}
+        </if>
+        GROUP BY
+        t.THESAURUS_ID,
+        t.THESAURUS_NAME,
+        t.THESAURUS_NAMES
+    </sql>
+
+
+    <select id="countthesaurusDetail" parameterType="thesaurus" resultType="long">
+        <include refid="countthesaurusDetailSql"/>
+    </select>
+
+    <select id="findtthesaurusDetailPage" parameterType="thesaurus" resultType="thesaurus">
+        <include refid="findtthesaurusDetailSql" />
+    </select>
+</mapper>

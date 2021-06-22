@@ -1,0 +1,80 @@
+<style>
+    #user-update {
+        padding: 20px 25px 25px 0;
+        height: 250px;
+    }
+</style>
+<div class="layui-fluid" id="user-update">
+    <form class="layui-form" action="" lay-filter="frpb-update-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" data-th-value="${frpb.id}">
+            </div>
+        </div>
+        <div id="result" >
+        </div>
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="frpb-update-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+
+<script data-th-inline="javascript">
+layui.use(['febs', 'form', 'xmSelect', 'validate'], function () {
+    let $ = layui.$,
+        febs = layui.febs,
+        layer = layui.layer,
+        frpb = [[${frpb}]],
+        form = layui.form,
+        validate = layui.validate;
+        form.verify(validate);
+        form.render();
+
+    let bdids = [];
+     checkboxOnclick=function(data) {
+         if((data.elem.checked)==true){
+             bdids.push(data.value);
+         }else if((data.elem.checked)==false){
+             for(var i=0;i<bdids.length;i++){
+                 if(data.value==bdids[i]){
+                      bdids.splice(i,1);
+                 }
+             }
+         }
+    }
+        form.on('checkbox' ,checkboxOnclick)
+    var iDd=frpb.id;
+    var url =ctx + 'frp/grouplist/'+iDd;
+    $.get(url,function(data){
+        for(var i=0; i < data.data.length; i++ ){
+            $("#result").append(
+                "&nbsp;"+
+            '<input id="allSelect"  name="items" lay-skin="primary"  type="checkbox" onclick="checkboxOnclick(this)"   title='+ data.data[i].name+'  value='+ data.data[i].id+' />'
+              + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+            );
+           if( (i+1) % 4== 0){
+                $("#result").append("<br>");
+            }
+        }
+        form.render();
+    })
+
+
+        form.on('submit(frpb-update-form-submit)',function (data) {
+             var  id=data.field.id;
+             var bdiddata=bdids.toString();
+            febs.get(ctx + 'mamapping/mamapping/update/' + id+ "/" + bdiddata,null, function () {
+                febs.alert.success('绑定成功');
+                layer.closeAll();
+                $('#febs-frpb').find('#query').click();
+            });
+            return false;
+        });
+
+
+
+    });
+</script>
+

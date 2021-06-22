@@ -1,0 +1,205 @@
+<style>
+    #user-update {
+        padding: 20px 25px 25px 0;
+    }
+</style>
+<div class="layui-fluid" id="shop-update">
+    <form class="layui-form" action="" lay-filter="shop-update-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">商品id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="commodityId" data-th-value="${shop.commodityId}">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">商品名称：</label>
+            <div class="layui-input-block">
+                <input type="text" required lay-verify="required" name="commodityName" maxlength="10" data-th-id="${shop.commodityId}"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">图片：</label>
+            <div class="layui-input-block">
+                <input type="text" name="commodityImage" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品类别：</label>
+            <div class="layui-input-block" id="user-update-dept"></div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">生产价格：</label>
+            <div class="layui-input-block">
+                <input type="text" required lay-verify="required" name="commodityCostPrice" minlength="4" maxlength="10" autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">出售价格：</label>
+            <div class="layui-input-block">
+                <input type="text" required lay-verify="required" name="commoditySellingPrice" minlength="4" maxlength="10" autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-btn layui-btn-sm layui-btn-primary febs-button-green-plain table-action" id="reset"
+             style="display: none">
+            <i class="layui-icon">&#xe79b;</i>
+        </div>
+        <button class="layui-btn" type="button" id="add-GG">添加规格</button>
+        <table lay-filter="shop-guige" lay-data="{id: 'shop-guige'}"></table>
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="shop-update-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+<script type="text/html" id="shop-update-option">
+    <a lay-event="edit"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="javascript" type="text/javascript">
+    layui.use(['febs', 'form', 'xmSelect', 'validate', 'table'], function () {
+        let $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            form = layui.form,
+            $view = $('#shop-update'),
+            xmSelect = layui.xmSelect,
+            shop = [[${shop}]],
+            table = layui.table,
+            $reset = $view.find('#reset'),
+            $addGuige = $view.find('#add-GG'),
+            sortObject = {field: 'specificationsName', type: null},
+            validate = layui.validate,
+            tableIns,
+            createTimeFrom,
+            createTimeTo,
+            deptXmlSelect;
+
+        form.verify(validate);
+        form.render();
+
+        initUserValue();
+        initTable();
+
+        $addGuige.on('click', function () {
+            febs.modal.view('新增规格', 'system/shop/add/gui/' + shop.commodityId, {
+                area: $(window).width() <= 750 ? '95%' : '660px',
+                btn: ['提交', '取消'],
+                yes: function (index, layero) {
+                    $('#shop-add-g').find('#submit').trigger('click');
+                    layer.close(index);
+                },
+                btn2: function (index, layero) {
+                    layer.close(index);
+                }
+            });
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'shop-guige',
+                url: ctx + 'specifications/list?commodityId=' + shop.commodityId,
+                cols: [
+                    [
+                        {field: 'specificationsName', title: '商品规格', minWidth: 80},
+                        {title: '操作', toolbar: '#shop-update-option', width: 100}
+                    ]
+                ]
+            });
+        }
+
+        table.on('tool(shop-guige)', function (obj) {
+            let data = obj.data,
+                layEvent = obj.event;
+            if (layEvent === 'del') {
+                febs.modal.confirm('删除规格', '确定删除该规格？', function () {
+                    deleteGuige(data.specificationsId);
+                });
+            }
+        });
+
+        function deleteGuige(specificationsId) {
+            febs.get(ctx + 'specifications/delete?specificationsId=' + specificationsId, null, function () {
+                febs.alert.success('删除成功');
+                $reset.click();
+            });
+        }
+
+        $reset.on('click', function () {
+            sortObject.type = 'null';
+            createTimeTo = null;
+            createTimeFrom = null;
+            tableIns.reload({where: '', page: {curr: 1}, initSort: sortObject});
+        });
+
+
+        deptXmlSelect = xmSelect.render({
+            el: '#user-update-dept',
+            model: {label: {type: 'text'}},
+            tree: {
+                show: true,
+                strict: false,
+                showLine: false,
+                clickCheck: true,
+                expandedKeys: [-1],
+            },
+            name: 'typeId',
+            theme: {
+                color: '#52c41a',
+            },
+            prop: {
+                value: 'id'
+            },
+            height: 'auto',
+            on: function (data) {
+                console.log(data)
+                if (data.isAdd) {
+                    return data.change.slice(0, 1)
+                }
+            }
+        });
+
+
+        febs.get(ctx + 'shopType/select/tree', null, function (data) {
+            deptXmlSelect.update(data)
+            shop.typeId && deptXmlSelect.setValue([shop.typeId]);
+        });
+
+
+        function initUserValue() {
+            form.val("shop-update-form", {
+                //商品名称
+                "commodityName": shop.commodityName,
+                //商品图片
+                "commodityImage": shop.commodityImage,
+                //商品规格
+                "specificationsName": shop.specificationsName,
+                //商品id
+                "specificationsIds": shop.specificationsIds,
+                //生产价格
+                "commodityCostPrice": shop.commodityCostPrice,
+                //出售价格
+                "commoditySellingPrice": shop.commoditySellingPrice,
+                // "description": shop.description
+            });
+        }
+
+        form.on('submit(shop-update-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, shop)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }else {
+                console.log(data)
+                febs.post(ctx + 'shop/shop/update', data.field, function () {
+                    febs.alert.success(shop.commodityName + ' 数据修改成功');
+                    // parent.layui.table.reload('newsTable');
+                    $('#febs-shop').find('#query').click();
+                });
+                return false;
+            }
+        });
+    });
+</script>

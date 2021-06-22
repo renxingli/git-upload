@@ -1,0 +1,63 @@
+<div class="layui-fluid" id="news-update">
+    <form class="layui-form" action="" id="update-news" lay-filter="user-add-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">新闻id：</label>
+            <div class="layui-input-block">
+                <input id="a" type="text" name="newsId" data-th-value="${news.newsId}"
+                       autocomplete="off" class="layui-input" required>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">新闻标题：</label>
+            <div class="layui-input-block">
+                <input type="text" name="newsTitle" data-th-value="${news.newsTitle}"
+                       autocomplete="off" class="layui-input" required>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">新闻内容：</label>
+            <div class="layui-input-block">
+                <textarea id="q" rows="20" name="newsContent"  required class="layui-textarea text">[[${news.newsContent}]]</textarea>
+            </div>
+        </div>
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="*">修改新闻</button>
+            <button type="reset" class="layui-btn layui-btn-primary" id="reset" lay-submit lay-filter="reset">取消</button>
+        </div>
+    </form>
+</div>
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'xmSelect', 'validate'], function () {
+        let $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            form = layui.form,
+            $view = $('#news-update'),
+            $searchForm = $view.find('form'),
+            $reset = $view.find('#reset'),
+            xmSelect = layui.xmSelect,
+            news = [[${news}]],
+            validate = layui.validate,
+            deptXmlSelect;
+
+        //清除表单内容
+        $reset.on('click', function () {
+            layer.closeAll();
+        });
+
+        form.on('submit(*)', function (data) {
+            if(news.newsContent==data.field.newsContent){
+                febs.alert.warn("新闻内容未做任何修改");
+                return false;
+            }else{
+                febs.post(ctx + 'news/update', data.field, function () {
+                    layer.closeAll();
+                    febs.alert.success('修改新闻成功');
+                    parent.layui.table.reload('newsTable');
+                    // window.parent.location.reload();
+                });
+            }
+            return false;
+        });
+    });
+</script>

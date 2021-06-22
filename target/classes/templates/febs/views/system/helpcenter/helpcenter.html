@@ -1,0 +1,171 @@
+<style>
+    #febs-user xm-select {
+        min-height: 30px;
+        line-height: 30px;
+    }
+
+    #febs-user xm-select > .xm-label .scroll .label-content {
+        display: flex;
+        padding: 0 30px 0 10px;
+    }
+    .a{
+        float: right;
+    }
+</style>
+<div class="layui-fluid layui-anim febs-anim" id="febs-help" lay-title="帮助中心">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="user-table-form">
+                        <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area a">
+                            <div class="layui-btn layui-btn-sm layui-btn-primary febs-button-green-plain table-action"
+                                 id="reset">
+                                <i class="layui-icon">&#xe79b;</i>
+                            </div>
+                            <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more">
+                                <i class="layui-icon">&#xe875;</i>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="layui-row">
+                        <div class="layui-col-md10">
+                        </div>
+                        <table lay-filter="newsTable" lay-data="{id: 'newsTable'}"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="news-option">
+    <a lay-event="detail"><i
+            class="layui-icon febs-edit-area febs-green">&#xe7a5;</i></a>
+    <a lay-event="edit"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'xmSelect'], function () {
+        let $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            dropdown = layui.dropdown,
+            $view = $('#febs-help'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            sortObject = {field: 'createTime', type: null},
+            tableIns;
+
+        form.render();
+
+        initTable();
+
+        laydate.render({
+            elem: '#user-createTime',
+            range: true,
+            trigger: 'click'
+        });
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                let checkStatus = table.checkStatus('newsTable');
+                if (name === 'add') {
+                    febs.modal.open('新增内容', 'system/help/add', {
+                    });
+                }
+                if (name === 'delete') {
+                    if (!checkStatus.data.length) {
+                        febs.alert.warn('请选择需要删除的信息');
+                    } else {
+                        febs.modal.confirm('删除新闻', '确定删除选中的新闻？', function () {
+                            let helpIds = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                helpIds.push(item.helpcenterId)
+                            });
+                            deleteNews(helpIds.join(','));
+                            $reset.click();
+                        });
+                    }
+                }
+            },
+            options: [{
+                name: 'add',
+                title: '新增内容',
+            }, {
+                name: 'delete',
+                title: '删除信息',
+            }]
+        });
+
+        table.on('tool(newsTable)', function (obj) {
+            console.log(obj)
+            let data = obj.data,
+                layEvent = obj.event;
+            if (layEvent === 'detail') {
+                febs.modal.view('信息详情', 'system/help/detail/' + data.helpcenterId, {
+                });
+            }
+            if (layEvent === 'edit') {
+                console.log(data.field)
+                febs.modal.open('信息修改','system/help/updateHtml/' + data.helpcenterId,{
+                })
+            }
+            if(layEvent === 'del'){
+                febs.modal.confirm("删除信息","确定删除选中的信息?",function(){
+                    deleteNews(data.helpcenterId);
+                    $reset.click();
+                })
+            }
+        });
+
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'newsTable',
+                toolbar: '#',
+                defaultToolbar: ['filter','print'],
+                url: ctx + 'helpcenter/list',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'helpcenterId', title: '编号', minWidth: 100,sort: true},
+                    {field: 'helpcenterTitle', title: '标题', minWidth: 150},
+                    {field: 'heplcenterContent', title: '内容', minWidth: 200},
+                    {field: 'createTime', title: '创建时间', minWidth: 150,sort:true},
+                    {title: '操作', toolbar: '#news-option', minWidth: 140}
+                ]]
+            });
+        }
+
+
+        //刷新按钮操作
+        $reset.on('click', function () {
+            $searchForm[0].reset();
+            parent.layui.table.reload('newsTable');
+        });
+        function deleteNews(helpcenterIds) {
+            console.log(helpcenterIds)
+            febs.get(ctx + 'help/delete/' + helpcenterIds , null, function () {
+                febs.alert.success('删除信息成功');
+                $reset.click();
+            });
+        }
+        table.on('sort(newsTable)', function (obj) {
+            sortObject = obj;
+            console.log(obj)
+            tableIns.reload({
+                initSort: obj,
+                where: $.extend(function () {}, {
+                    field: obj.field,
+                    order: obj.type
+                })
+            });
+        });
+    });
+</script>

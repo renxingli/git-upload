@@ -1,0 +1,58 @@
+<div class="layui-fluid" id="news-update">
+    <form class="layui-form" action="" id="update-news" lay-filter="user-add-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="deliveryTimeId" data-th-value="${delivery.deliveryTimeId}"
+                       autocomplete="off" class="layui-input" required>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">备注：</label>
+            <div class="layui-input-block">
+                <input type="text" name="remark" data-th-value="${delivery.remark}"
+                       autocomplete="off" class="layui-input" required>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">折率：</label>
+            <div class="layui-input-block">
+                <input type="number"  name="discount"  required class="layui-input" data-th-value="${delivery.discount}">
+            </div>
+        </div>
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="*">修改</button>
+            <button type="reset" class="layui-btn layui-btn-primary" id="reset" lay-submit lay-filter="reset">取消</button>
+        </div>
+        <br><br>
+    </form>
+</div>
+<script>
+    layui.use(['febs', 'form', 'validate', 'xmSelect'], function () {
+        let $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            form = layui.form,
+            $view = $('#news-update'),
+            $searchForm = $view.find('form'),
+            $reset = $view.find('#reset'),
+            xmSelect = layui.xmSelect,
+            validate = layui.validate,
+            deptXmlSelect;
+
+        //清除表单内容
+        $reset.on('click', function () {
+            layer.closeAll();
+        });
+
+        form.on('submit(*)', function (data) {
+            console.log(data)
+            febs.post(ctx + 'deliveryTime/update', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('修改成功');
+                window.parent.location.reload();
+            });
+            return false;
+        });
+    });
+</script>

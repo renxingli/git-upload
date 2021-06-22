@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cc.mrbird.febs.stocks.mapper.StocksMapper">
+    <sql id="countstocksDetailSql" >
+        SELECT
+        COUNT(1)
+        FROM
+        t_stocks t
+        WHERE 1 = 1
+        <if test="stocks.rawmaterialName != null and stocks.rawmaterialName != ''">
+            AND t.RAWMATERIAL_NAME = #{stocks.rawmaterialName}
+        </if>
+        <if test="stocks.recommendLength != null and stocks.recommendLength != ''">
+            AND t.RECOMMEND_LENGTH = #{stocks.recommendLength}
+        </if>
+        <if test="stocks.minLength != null and stocks.minLength != ''">
+            AND t.MIN_LENGTH = #{stocks.minLength}
+        </if>
+        <if test="stocks.maxLength != null and stocks.maxLength != ''">
+            AND t.MAX_LENGTH = #{stocks.maxLength}
+        </if>
+        <if test="stocks.intervalLength != null and stocks.intervalLength != ''">
+            AND t.INTERVAL_LENGTH = #{stocks.intervalLength}
+        </if>
+    </sql>
+
+    <sql id="findtstocksDetailSql">
+        SELECT
+        t.RAWMATERIAL_ID,
+        t.RAWMATERIAL_NAME,
+        t.RECOMMEND_LENGTH,
+        t.MIN_LENGTH,
+        t.MAX_LENGTH,
+        t.INTERVAL_LENGTH
+        FROM
+        t_stocks t
+        WHERE 1 = 1
+        <if test="stocks.rawmaterialName != null and stocks.rawmaterialName != ''">
+            AND t.RAWMATERIAL_NAME = #{stocks.rawmaterialName}
+        </if>
+        <if test="stocks.recommendLength != null and stocks.recommendLength != ''">
+            AND t.RECOMMEND_LENGTH = #{stocks.recommendLength}
+        </if>
+        <if test="stocks.minLength != null and stocks.minLength != ''">
+            AND t.MIN_LENGTH = #{stocks.minLength}
+        </if>
+        <if test="stocks.maxLength != null and stocks.maxLength != ''">
+            AND t.MAX_LENGTH = #{stocks.maxLength}
+        </if>
+        <if test="stocks.intervalLength != null and stocks.intervalLength != ''">
+            AND t.INTERVAL_LENGTH = #{stocks.intervalLength}
+        </if>
+        GROUP BY
+        t.RAWMATERIAL_ID,
+        t.RAWMATERIAL_NAME,
+        t.RECOMMEND_LENGTH,
+        t.MIN_LENGTH,
+        t.MAX_LENGTH,
+        t.INTERVAL_LENGTH
+    </sql>
+
+
+    <select id="countstocksDetail" parameterType="stocks" resultType="long">
+        <include refid="countstocksDetailSql"/>
+    </select>
+
+    <select id="findtstocksDetailPage" parameterType="stocks" resultType="stocks">
+        <include refid="findtstocksDetailSql" />
+    </select>
+</mapper>
